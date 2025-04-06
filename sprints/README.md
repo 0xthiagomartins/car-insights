@@ -24,10 +24,10 @@ Tasks and sprints can have the following status:
 ```
 sprints/
 ├── README.md
-├── sprint_01/
+├── 01_project_foundation/
 │   ├── goals.md
 │   └── tasks.md
-├── sprint_02/
+├── 02_data_collection/
 │   ├── goals.md
 │   └── tasks.md
 └── ...
