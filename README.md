@@ -48,7 +48,17 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-4. Run the dashboard:
+4. Set up environment variables:
+```bash
+# Copy the example .env file
+cp .env.example .env
+
+# Edit the .env file with your credentials
+# You'll need to register at https://portal-webmotors.sensedia.com/api-portal/
+# to get your Webmotors API credentials
+```
+
+5. Run the dashboard:
 ```bash
 streamlit run src/app.py
 ```
@@ -61,6 +71,7 @@ car-insights/
 │   ├── data/           # Data collection and processing
 │   ├── models/         # ML models and predictions
 │   ├── dashboard/      # Streamlit dashboard components
+│   ├── services/       # External API services
 │   └── utils/          # Utility functions
 ├── data/               # Raw and processed data
 ├── notebooks/          # Jupyter notebooks for analysis
@@ -77,6 +88,20 @@ car-insights/
 3. **Price Analysis**: Price trends and distributions
 4. **Opportunities**: List of potential deals
 5. **Model Insights**: ML model performance and insights
+
+## 🔑 API Integration
+
+This project integrates with the Webmotors API to collect vehicle data. To use this feature:
+
+1. Register at the [Webmotors API Portal](https://portal-webmotors.sensedia.com/api-portal/)
+2. Create an application to get your client ID and client secret
+3. Add these credentials to your `.env` file
+
+For more information about the Webmotors API, refer to the following documentation:
+- [Authentication Guide](https://portal-webmotors.sensedia.com/api-portal/documentacao/autenticacao)
+- [Error Codes](https://portal-webmotors.sensedia.com/api-portal/documentacao/codigos-de-erro)
+- [Catalog API](https://portal-webmotors.sensedia.com/api-portal/swagger/webmotors-catalogo-api/1.0.0)
+- [Financing API](https://portal-webmotors.sensedia.com/api-portal/swagger/santander-financing-service-simulation/1.0)
 
 ## 🤝 Contributing
 
