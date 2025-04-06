@@ -17,6 +17,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Configure logging
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
@@ -31,6 +32,8 @@ class WebmotorsClient:
         self,
         client_id: Optional[str] = None,
         client_secret: Optional[str] = None,
+        api_username: Optional[str] = None,
+        api_password: Optional[str] = None,
         base_url: Optional[str] = None,
         api_version: Optional[str] = None,
     ):
@@ -40,17 +43,32 @@ class WebmotorsClient:
         Args:
             client_id: Webmotors API client ID
             client_secret: Webmotors API client secret
+            api_username: Webmotors API username
+            api_password: Webmotors API password
             base_url: Base URL for the Webmotors API
             api_version: API version to use
         """
         self.client_id = client_id or os.getenv("WEBMOTORS_CLIENT_ID")
         self.client_secret = client_secret or os.getenv("WEBMOTORS_CLIENT_SECRET")
-        self.base_url = base_url or os.getenv("WEBMOTORS_API_BASE_URL", "https://api.webmotors.com.br")
+        self.api_username = api_username or os.getenv("WEBMOTORS_API_USERNAME")
+        self.api_password = api_password or os.getenv("WEBMOTORS_API_PASSWORD")
+        self.auth_base_url = "https://api-webmotors.sensedia.com/oauth/v1"
+        self.base_url = base_url or os.getenv("WEBMOTORS_API_BASE_URL", "https://api-webmotors.sensedia.com")
         self.api_version = api_version or os.getenv("WEBMOTORS_API_VERSION", "v1")
         self.access_token = None
         
-        if not self.client_id or not self.client_secret:
-            logger.warning("Webmotors API credentials not found. Please set WEBMOTORS_CLIENT_ID and WEBMOTORS_CLIENT_SECRET environment variables.")
+        # Log credentials (masked)
+        logger.debug(f"Client ID: {self.client_id[:4]}...{self.client_id[-4:] if self.client_id else None}")
+        logger.debug(f"Client Secret: {self.client_secret[:4]}...{self.client_secret[-4:] if self.client_secret else None}")
+        logger.debug(f"API Username: {self.api_username[:4]}...{self.api_username[-4:] if self.api_username else None}")
+        logger.debug(f"API Password: {'*' * 8 if self.api_password else None}")
+        
+        if not all([self.client_id, self.client_secret, self.api_username, self.api_password]):
+            logger.warning(
+                "Webmotors API credentials not found. Please set WEBMOTORS_CLIENT_ID, "
+                "WEBMOTORS_CLIENT_SECRET, WEBMOTORS_API_USERNAME, and WEBMOTORS_API_PASSWORD "
+                "environment variables."
+            )
     
     def authenticate(self) -> bool:
         """
@@ -59,13 +77,13 @@ class WebmotorsClient:
         Returns:
             True if authentication was successful, False otherwise
         """
-        if not self.client_id or not self.client_secret:
-            logger.error("Cannot authenticate: Missing client ID or client secret")
+        if not all([self.client_id, self.client_secret, self.api_username, self.api_password]):
+            logger.error("Cannot authenticate: Missing required credentials")
             return False
         
         try:
-            # Create authorization header
-            auth_string = f"{self.client_id}:{self.client_secret}"
+            # Create authorization header with API credentials
+            auth_string = f"{self.api_username}:{self.api_password}"
             auth_bytes = auth_string.encode("ascii")
             auth_b64 = base64.b64encode(auth_bytes).decode("ascii")
             
@@ -76,14 +94,30 @@ class WebmotorsClient:
             }
             
             data = {
-                "grant_type": "client_credentials",
+                "grant_type": "cliente",
+                "client_id": self.client_id,
+                "client_secret": self.client_secret,
             }
             
+            url = f"{self.auth_base_url}/access-token"
+            
+            # Log complete request details
+            logger.debug("Authentication request details:")
+            logger.debug(f"URL: {url}")
+            logger.debug(f"Headers: {headers}")
+            logger.debug(f"Data: {data}")
+            logger.debug(f"Base64 encoded auth: {auth_b64}")
+            
             response = requests.post(
-                f"{self.base_url}/oauth/token",
+                url,
                 headers=headers,
                 data=data,
             )
+            
+            # Log response details
+            logger.debug(f"Response status code: {response.status_code}")
+            logger.debug(f"Response headers: {response.headers}")
+            logger.debug(f"Response body: {response.text}")
             
             # Check response
             if response.status_code == 200:
@@ -93,6 +127,7 @@ class WebmotorsClient:
                 return True
             else:
                 logger.error(f"Authentication failed with status code {response.status_code}: {response.text}")
+                logger.error(f"Response headers: {response.headers}")
                 return False
                 
         except Exception as e:
@@ -133,7 +168,13 @@ class WebmotorsClient:
         Returns:
             Response data as a dictionary, or None if the request failed
         """
-        url = f"{self.base_url}/{self.api_version}/{endpoint}"
+        url = f"{self.base_url}/{endpoint}"
+        logger.debug(f"Making {method} request to {url}")
+        logger.debug(f"Headers: {self._get_headers()}")
+        if params:
+            logger.debug(f"Params: {params}")
+        if data:
+            logger.debug(f"Data: {data}")
         
         try:
             response = requests.request(
@@ -163,6 +204,7 @@ class WebmotorsClient:
                 return response.json()
             else:
                 logger.error(f"API request failed with status code {response.status_code}: {response.text}")
+                logger.error(f"Response headers: {response.headers}")
                 return None
                 
         except Exception as e:
