@@ -1,12 +1,13 @@
 import streamlit as st
-from . import home, data_analysis, price_prediction, opportunities
+from . import home, data_analysis, price_prediction, opportunities, table_reality
 
 # Dictionary mapping page names to their render functions
 PAGES = {
     "Home": home.render,
     "Data Analysis": data_analysis.render,
     "Price Prediction": price_prediction.render,
-    "Opportunities": opportunities.render
+    "Opportunities": opportunities.render,
+    "Tabela Realidade": table_reality.render
 }
 
 def render_sidebar():
